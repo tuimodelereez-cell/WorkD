@@ -1,0 +1,15 @@
+{
+  "appId": "app.workd.mobile",
+  "appName": "work D",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": true
+  },
+  "server": {
+    "url": "https://earnest-cucurucho-9d33e5.netlify.app/",
+    "cleartext": false,
+    "androidScheme": "https"
+  },
+  "appendUserAgent": "WorkDApp/2"
+}

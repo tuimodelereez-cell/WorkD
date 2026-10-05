@@ -1,0 +1,17 @@
+{
+  "name": "workd-native",
+  "version": "1.0.0",
+  "private": true,
+  "description": "work D — เปลือกแอปเนทีฟของเว็บเดิม สร้างด้วย Capacitor",
+  "scripts": {
+    "sync": "cap sync android",
+    "open:android": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/core": "^8.5.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.2"
+  }
+}
