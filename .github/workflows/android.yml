@@ -1,0 +1,69 @@
+name: build android apk
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - name: ติดตั้ง dependencies
+        run: npm ci
+
+      - name: เอาไฟล์เว็บเข้าโปรเจกต์แอนดรอยด์
+        run: npx cap sync android
+
+      # อัปโหลดผ่านหน้าเว็บ GitHub ทำให้ gradlew ไม่มีสิทธิ์รัน ต้องเปิดสิทธิ์ก่อน
+      - name: เปิดสิทธิ์ gradlew
+        run: chmod +x android/gradlew
+
+      - name: สร้าง APK แบบทดสอบ
+        run: ./gradlew assembleDebug --no-daemon
+        working-directory: android
+
+      - name: เตรียม keystore
+        id: keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "ยังไม่ได้ใส่ Secrets ข้ามการสร้างตัวจริงที่เซ็นแล้ว"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > android/app/workd.keystore
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
+      - name: สร้าง APK ตัวจริงที่เซ็นแล้ว
+        if: ${{ steps.keystore.outputs.ready == 'true' }}
+        env:
+          WORKD_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          WORKD_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          WORKD_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew assembleRelease --no-daemon
+        working-directory: android
+
+      - name: เก็บไฟล์ APK ไว้ให้ดาวน์โหลด
+        uses: actions/upload-artifact@v4
+        with:
+          name: workd-apk
+          path: |
+            android/app/build/outputs/apk/debug/*.apk
+            android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
